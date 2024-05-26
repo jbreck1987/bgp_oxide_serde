@@ -13,6 +13,7 @@ pub enum Error {
     // generic error messages. Will add more variants as their
     // need arises.
     CustomMsg(String),
+    UnsupportedSignedInt,
 }
 
 impl std::error::Error for Error {}
@@ -20,7 +21,8 @@ impl std::error::Error for Error {}
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::CustomMsg(msg) => f.write_str(msg)
+            Self::CustomMsg(msg) => f.write_str(msg),
+            Self::UnsupportedSignedInt => f.write_str("Signed integers unsupported in protocol.")
         }
     }
 }
