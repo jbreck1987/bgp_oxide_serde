@@ -6,7 +6,7 @@ mod ser;
 
 pub use de::Deserializer;
 pub use error::{Error, Result};
-pub use ser::Serializer;
+pub use ser::{to_bytes, Serializer};
 
 #[cfg(test)]
 mod tests {}

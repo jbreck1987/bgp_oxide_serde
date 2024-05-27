@@ -11,21 +11,19 @@ pub struct Serializer {
     output: BytesMut
 }
 
-impl Serializer {
-    pub fn to_bytes<T: Serialize>(&self, in_type: T) -> Result<BytesMut> {
+
+pub fn to_bytes<T: Serialize>(in_type: T) -> Result<BytesMut> {
         // Construct a new instance of Self
-        let mut serializer = Self {
+        let mut serializer = Serializer {
             // Max message size is 4096 octets. BytesMut is smart,
             // giving max capacity does not mean the message is guaranteed
             // to be that long!
             output: BytesMut::with_capacity(4096)
-        };
+    };
 
-        // Try to serialize the type and return the result
+// Try to serialize the type and return the result
         in_type.serialize(&mut serializer)?;
         Ok(serializer.output)
-
-    }
 }
 
 impl<'a> ser::Serializer for &'a mut Serializer {
