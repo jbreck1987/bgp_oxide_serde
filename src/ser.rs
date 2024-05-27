@@ -50,81 +50,93 @@ impl<'a> ser::Serializer for &'a mut Serializer {
 
     fn serialize_bool(self, v: bool) -> Result<()> {
         match v {
-            true => self.output.put_u8(0u8),
-            false => self.output.put_u8(1u8)
+            true => self.output.put_u8(1u8),
+            false => self.output.put_u8(0u8)
         }
         Ok(())
     }
     
     // BGP4 doesn't support signed integers
-    fn serialize_i8(self, v: i8) -> Result<()> {
+    fn serialize_i8(self, _v: i8) -> Result<()> {
         Err(Error::UnsupportedSignedInt)
     }
     
-    fn serialize_i16(self, v: i16) -> Result<()> {
-        self.serialize_i8(0)
+    fn serialize_i16(self, _v: i16) -> Result<()> {
+        Err(Error::UnsupportedSignedInt)
     }
     
-    fn serialize_i32(self, v: i32) -> Result<()> {
-        self.serialize_i8(0)
+    fn serialize_i32(self, _v: i32) -> Result<()> {
+        Err(Error::UnsupportedSignedInt)
     }
     
-    fn serialize_i64(self, v: i64) -> Result<()> {
-        self.serialize_i8(0)
+    fn serialize_i64(self, _v: i64) -> Result<()> {
+        Err(Error::UnsupportedSignedInt)
     }
     
     fn serialize_u8(self, v: u8) -> Result<()> {
-       todo!() 
+       self.output.put_u8(v);
+       Ok(())
     }
-    
+    // BytesMut put_x methods store multi-byte
+    // values in network byte order by default.
     fn serialize_u16(self, v: u16) -> Result<()> {
-       todo!() 
+       self.output.put_u16(v);
+       Ok(())
     }
     
-    fn serialize_u32(self, v: u32) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        todo!()
+    fn serialize_u32(self, v: u32) -> Result<()> {
+        self.output.put_u32(v);
+        Ok(())
     }
     
-    fn serialize_u64(self, v: u64) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        todo!()
+    fn serialize_u64(self, v: u64) -> Result<()> {
+        self.output.put_u64(v);
+        Ok(())
     }
     
-    fn serialize_f32(self, v: f32) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        todo!()
+    fn serialize_f32(self, _v: f32) -> Result<()> {
+        Err(Error::UnsupportedFloat)
     }
     
-    fn serialize_f64(self, v: f64) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        todo!()
+    fn serialize_f64(self, _v: f64) -> Result<()> {
+        Err(Error::UnsupportedFloat)
     }
     
-    fn serialize_char(self, v: char) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        todo!()
+    fn serialize_char(self, _v: char) -> Result<()> {
+       Err(Error::UnsupportedText) 
     }
     
-    fn serialize_str(self, v: &str) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        todo!()
+    fn serialize_str(self, _v: &str) -> Result<()>  {
+        Err(Error::UnsupportedText)
     }
     
-    fn serialize_bytes(self, v: &[u8]) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        todo!()
+    fn serialize_bytes(self, v: &[u8]) -> Result<()> {
+        self.output.put_slice(v);
+        Ok(())
     }
     
-    fn serialize_none(self) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        todo!()
+    fn serialize_none(self) -> Result<()> {
+        // If None, do nothing.
+        Ok(())
     }
     
-    fn serialize_some<T>(self, value: &T) -> std::prelude::v1::Result<Self::Ok, Self::Error>
-    where
-        T: ?Sized + ser::Serialize {
-        todo!()
+   fn serialize_some<T>(self, value: &T) -> Result<()>
+       where
+           T: ?Sized + Serialize 
+    {
+       // Serialize the inner
+       value.serialize(self)?;
+       Ok(())
+    } 
+    
+    fn serialize_unit(self) -> Result<()> {
+        // Do nothing for these, but no need to error
+        Ok(())
     }
     
-    fn serialize_unit(self) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        todo!()
-    }
-    
-    fn serialize_unit_struct(self, name: &'static str) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        todo!()
+    fn serialize_unit_struct(self, name: &'static str) -> Result<()> {
+        // Do nothing here, no need to error.
+        Ok(())
     }
     
     fn serialize_unit_variant(
@@ -132,18 +144,21 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         name: &'static str,
         variant_index: u32,
         variant: &'static str,
-    ) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        todo!()
+    ) -> Result<()> {
+        // Do nothing with these, no need to error.
+        Ok(())
     }
     
     fn serialize_newtype_struct<T>(
         self,
         name: &'static str,
         value: &T,
-    ) -> std::prelude::v1::Result<Self::Ok, Self::Error>
+    ) -> Result<()> 
     where
         T: ?Sized + ser::Serialize {
-        todo!()
+            // Serialize the inner
+            value.serialize(self)?;
+            Ok(())
     }
     
     fn serialize_newtype_variant<T>(
@@ -152,48 +167,58 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         variant_index: u32,
         variant: &'static str,
         value: &T,
-    ) -> std::prelude::v1::Result<Self::Ok, Self::Error>
+    ) -> Result<()> 
     where
         T: ?Sized + ser::Serialize {
-        todo!()
+        // Will only serialize the inner, no use (for now) for the
+        // variant metadata.
+        value.serialize(self)?;
+        Ok(())
     }
     
-    fn serialize_seq(self, len: Option<usize>) -> std::prelude::v1::Result<Self::SerializeSeq, Self::Error> {
-        todo!()
+    fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
+        // Nothing special about initializing sequences, the protocol is binary and self-describing.
+        Ok(self)
     }
     
-    fn serialize_tuple(self, len: usize) -> std::prelude::v1::Result<Self::SerializeTuple, Self::Error> {
-        todo!()
+    fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {
+        // Tuples are the same a sequences in the protocol, no special init setup necessary.
+        Ok(self)
     }
     
     fn serialize_tuple_struct(
         self,
-        name: &'static str,
-        len: usize,
-    ) -> std::prelude::v1::Result<Self::SerializeTupleStruct, Self::Error> {
-        todo!()
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleStruct> {
+        // Same as serialize tuple, the protocol doesnt care about the tuple name.
+        Ok(self)
     }
     
     fn serialize_tuple_variant(
         self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
-        len: usize,
-    ) -> std::prelude::v1::Result<Self::SerializeTupleVariant, Self::Error> {
-        todo!()
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleVariant> {
+        // Same as tuple struct, no use for metadata.
+        Ok(self)
     }
     
-    fn serialize_map(self, len: Option<usize>) -> std::prelude::v1::Result<Self::SerializeMap, Self::Error> {
-        todo!()
+    fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap> {
+        // No use for maps in the message formatting (for now), map serialization will be unsupported.
+        // The message types have pre-defined structure, so can't see a need for these arising in the future
+        Err(Error::UnsupportedMap)
     }
     
     fn serialize_struct(
         self,
         name: &'static str,
         len: usize,
-    ) -> std::prelude::v1::Result<Self::SerializeStruct, Self::Error> {
-        todo!()
+    ) -> Result<Self::SerializeStruct> {
+        // No use for struct metadata
+        Ok(self)
     }
     
     fn serialize_struct_variant(
@@ -202,52 +227,9 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         variant_index: u32,
         variant: &'static str,
         len: usize,
-    ) -> std::prelude::v1::Result<Self::SerializeStructVariant, Self::Error> {
-        todo!()
+    ) -> Result<Self::SerializeStructVariant> {
+        // No use for struct variant metadata
+        Ok(self)
     }
     
-    fn serialize_i128(self, v: i128) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        let _ = v;
-        Err(ser::Error::custom("i128 is not supported"))
-    }
-    
-    fn serialize_u128(self, v: u128) -> std::prelude::v1::Result<Self::Ok, Self::Error> {
-        let _ = v;
-        Err(ser::Error::custom("u128 is not supported"))
-    }
-    
-    fn collect_seq<I>(self, iter: I) -> std::prelude::v1::Result<Self::Ok, Self::Error>
-    where
-        I: IntoIterator,
-        <I as IntoIterator>::Item: Serialize,
-    {
-        let mut iter = std::iter.into_iter();
-        let mut serializer = tri!(self.serialize_seq(iterator_len_hint(&iter)));
-        tri!(iter.try_for_each(|item| serializer.serialize_element(&item)));
-        serializer.end()
-    }
-    
-    fn collect_map<K, V, I>(self, iter: I) -> std::prelude::v1::Result<Self::Ok, Self::Error>
-    where
-        K: Serialize,
-        V: Serialize,
-        I: IntoIterator<Item = (K, V)>,
-    {
-        let mut iter = std::iter.into_iter();
-        let mut serializer = tri!(self.serialize_map(iterator_len_hint(&iter)));
-        tri!(iter.try_for_each(|(key, value)| serializer.serialize_entry(&key, &value)));
-        serializer.end()
-    }
-    
-    fn collect_str<T>(self, value: &T) -> std::prelude::v1::Result<Self::Ok, Self::Error>
-    where
-        T: ?Sized + std::fmt::Display,
-    {
-        self.serialize_str(&value.to_string())
-    }
-    
-    fn is_human_readable(&self) -> bool {
-        true
-    }
-
 }
