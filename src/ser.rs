@@ -125,8 +125,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
            T: ?Sized + Serialize 
     {
        // Serialize the inner
-       value.serialize(self)?;
-       Ok(())
+       value.serialize(self)
     } 
     
     fn serialize_unit(self) -> Result<()> {
@@ -134,16 +133,16 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         Ok(())
     }
     
-    fn serialize_unit_struct(self, name: &'static str) -> Result<()> {
+    fn serialize_unit_struct(self, _name: &'static str) -> Result<()> {
         // Do nothing here, no need to error.
         Ok(())
     }
     
     fn serialize_unit_variant(
         self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
     ) -> Result<()> {
         // Do nothing with these, no need to error.
         Ok(())
@@ -151,29 +150,27 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     
     fn serialize_newtype_struct<T>(
         self,
-        name: &'static str,
+        _name: &'static str,
         value: &T,
     ) -> Result<()> 
     where
         T: ?Sized + ser::Serialize {
             // Serialize the inner
-            value.serialize(self)?;
-            Ok(())
+            value.serialize(self)
     }
     
     fn serialize_newtype_variant<T>(
         self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
         value: &T,
     ) -> Result<()> 
     where
         T: ?Sized + ser::Serialize {
         // Will only serialize the inner, no use (for now) for the
         // variant metadata.
-        value.serialize(self)?;
-        Ok(())
+        value.serialize(self)
     }
     
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
@@ -214,8 +211,8 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     
     fn serialize_struct(
         self,
-        name: &'static str,
-        len: usize,
+        _name: &'static str,
+        _len: usize,
     ) -> Result<Self::SerializeStruct> {
         // No use for struct metadata
         Ok(self)
@@ -223,13 +220,135 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     
     fn serialize_struct_variant(
         self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
-        len: usize,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
     ) -> Result<Self::SerializeStructVariant> {
         // No use for struct variant metadata
         Ok(self)
     }
     
+}
+
+// Now to define the impls that handle compound types.
+// The structure of the message types are pre-defined
+// and are self-describing. Most of these will be identical.
+impl<'a> ser::SerializeSeq for &'a mut Serializer {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
+        where
+            T: ?Sized + Serialize {
+                // Since format is binary, no special handling
+                // between elements. Just stick them in the buffer
+                // in order.
+                value.serialize(&mut **self)
+    }
+    fn end(self) -> Result<()> {
+        // Again, no special closing character in the
+        // format, nothing special for the end.
+        Ok(())
+    }
+}
+
+impl<'a> ser::SerializeTuple for &'a mut Serializer {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
+        where
+            T: ?Sized + Serialize {
+                // Implementation no different for sequences and tuples.
+                // Format is fixed and/or self-describing
+                value.serialize(&mut **self)
+    }
+    fn end(self) -> Result<()> {
+        // Same as sequence, nothing special for the end.
+        Ok(())
+    }
+}
+
+impl<'a> ser::SerializeTupleVariant for &'a mut Serializer {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T>(&mut self, value: &T) -> Result<()>
+        where
+            T: ?Sized + Serialize {
+                value.serialize(&mut **self)
+    }
+
+    fn end(self) -> Result<()> {
+        Ok(())
+    }
+}
+
+impl<'a> ser::SerializeStructVariant for &'a mut Serializer {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
+        where
+            T: ?Sized + Serialize {
+                value.serialize(&mut **self)
+    }
+    fn end(self) -> Result<()> {
+        Ok(())
+    }
+}
+
+impl<'a> ser::SerializeTupleStruct for &'a mut Serializer {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T>(&mut self, value: &T) -> Result<()>
+        where
+            T: ?Sized + Serialize {
+                value.serialize(&mut **self)
+    }
+    fn end(self) -> Result<()> {
+        Ok(())
+    }
+}
+
+impl<'a> ser::SerializeStruct for &'a mut Serializer {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
+        where
+            T: ?Sized + Serialize {
+                value.serialize(&mut **self)
+    }
+    fn end(self) -> Result<()> {
+        Ok(())
+    }
+}
+
+// Map is unsupported in the format (for now)
+impl<'a> ser::SerializeMap for &'a mut Serializer {
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_key<T>(&mut self, _key: &T) -> Result<()>
+        where
+            T: ?Sized + Serialize {
+                Err(Error::UnsupportedMap)
+    }
+    fn serialize_entry<K, V>(&mut self, _key: &K, _value: &V) -> Result<()>
+        where
+            K: ?Sized + Serialize,
+            V: ?Sized + Serialize, {
+                Err(Error::UnsupportedMap)
+    }
+    fn serialize_value<T>(&mut self, _value: &T) -> Result<()>
+        where
+            T: ?Sized + Serialize {
+                Err(Error::UnsupportedMap)
+    }
+    fn end(self) -> Result<()> {
+       Err(Error::UnsupportedMap) 
+    }
 }
