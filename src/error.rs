@@ -14,6 +14,9 @@ pub enum Error {
     // need arises.
     CustomMsg(String),
     UnsupportedSignedInt,
+    UnsupportedFloat,
+    UnsupportedMap,
+    UnsupportedText,
 }
 
 impl std::error::Error for Error {}
@@ -22,7 +25,10 @@ impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::CustomMsg(msg) => f.write_str(msg),
-            Self::UnsupportedSignedInt => f.write_str("Signed integers unsupported in protocol.")
+            Self::UnsupportedSignedInt => f.write_str("Signed integers unsupported in protocol."),
+            Self::UnsupportedFloat => f.write_str("Floats unsupported in protocol."),
+            Self::UnsupportedMap => f.write_str("Maps are unsupported with this serializer."),
+            Self::UnsupportedText => f.write_str("Protocol doesn't support text types."),
         }
     }
 }
