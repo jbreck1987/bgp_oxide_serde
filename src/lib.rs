@@ -9,6 +9,4 @@ pub use error::{Error, Result};
 pub use ser::Serializer;
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-}
+mod tests {}
