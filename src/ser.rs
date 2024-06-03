@@ -467,11 +467,11 @@ mod tests {
     }
 
     #[derive(Serialize)]
-    struct NewTypeStructUnsignedInt(i8);
+    struct NewTypeStructSignedInt(i8);
     #[derive(Serialize)]
-    struct TupleStructUnsignedInt(u8, i32);
+    struct TupleStructSignedInt(u8, i32);
     #[derive(Serialize)]
-    struct StructUnsignedInt {
+    struct StructSignedInt {
         field: i64
     }
 
@@ -649,6 +649,36 @@ mod tests {
             Ok(_) => panic!("Expected Err, got Ok"),
             Err(e) => {
                 assert_eq!(e.to_string(), "Serialization of floats unsupported. Error info - Type: \"TupleStructFloat\".")
+            },
+        }
+    }
+    
+    #[test]
+    fn test_err_struct_sint() {
+        let test_ntype = NewTypeStructSignedInt(-9);
+        let test_struct = StructSignedInt {field: -6};
+        let test_tuple = TupleStructSignedInt(42, -9);
+
+        let szed_ntype = to_bytes(test_ntype);
+        let szed_struct = to_bytes(test_struct);
+        let szed_tuple = to_bytes(test_tuple);
+
+        match szed_ntype {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of signed ints unsupported. Error info - Type: \"NewTypeStructSignedInt\".")
+            },
+        }
+        match szed_struct {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of signed ints unsupported. Error info - Type: \"StructSignedInt\", Field: \"field\".")
+            },
+        }
+        match szed_tuple {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of signed ints unsupported. Error info - Type: \"TupleStructSignedInt\".")
             },
         }
     }
