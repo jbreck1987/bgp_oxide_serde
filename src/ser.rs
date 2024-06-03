@@ -409,7 +409,10 @@ impl<'a> ser::SerializeMap for &'a mut Serializer {
 mod tests {
     use super::*;
     use std::collections::HashMap;
-
+    
+    // Types used for testing error conditions
+    //
+    // -- Enums --
     #[derive(Serialize)]
     enum EnumHashTest {
         NewTypeVariant(HashMap<&'static str, u8>),
@@ -433,6 +436,43 @@ mod tests {
         NewTypeVariant(char),
         StructVariant{field: String},
         TupleVariant(u8, &'static str)
+    }
+
+    // -- Structs --
+    #[derive(Serialize)]
+    struct NewTypeStructHash(HashMap<u8, &'static str>);
+    #[derive(Serialize)]
+    struct TupleStructHash(u8, HashMap<u8, &'static str>);
+    #[derive(Serialize)]
+    struct StructHash {
+        field: HashMap<u8, &'static str>
+    }
+
+    #[derive(Serialize)]
+    struct NewTypeStructFloat(f32);
+    #[derive(Serialize)]
+    struct TupleStructFloat(u8, f64);
+    #[derive(Serialize)]
+    struct StructFloat {
+        field: f32
+    }
+
+    #[derive(Serialize)]
+    struct NewTypeStructText(char);
+    #[derive(Serialize)]
+    struct TupleStructText(u8, String);
+    #[derive(Serialize)]
+    struct StructText {
+        field: &'static str 
+    }
+
+    #[derive(Serialize)]
+    struct NewTypeStructUnsignedInt(i8);
+    #[derive(Serialize)]
+    struct TupleStructUnsignedInt(u8, i32);
+    #[derive(Serialize)]
+    struct StructUnsignedInt {
+        field: i64
     }
 
     #[test]
@@ -549,6 +589,66 @@ mod tests {
             Ok(_) => panic!("Expected Err, got Ok"),
             Err(e) => {
                 assert_eq!(e.to_string(), "Serialization of signed ints unsupported. Error info - Type: \"EnumSignedIntTest\", Variant: \"TupleVariant\".")
+            },
+        }
+    }
+    
+    #[test]
+    fn test_err_struct_hash() {
+        let test_ntype = NewTypeStructHash(HashMap::new());
+        let test_struct = StructHash {field: HashMap::new()};
+        let test_tuple = TupleStructHash(42, HashMap::new());
+
+        let szed_ntype = to_bytes(test_ntype);
+        let szed_struct = to_bytes(test_struct);
+        let szed_tuple = to_bytes(test_tuple);
+
+        match szed_ntype {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of maps unsupported. Error info - Type: \"NewTypeStructHash\".")
+            },
+        }
+        match szed_struct {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of maps unsupported. Error info - Type: \"StructHash\", Field: \"field\".")
+            },
+        }
+        match szed_tuple {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of maps unsupported. Error info - Type: \"TupleStructHash\".")
+            },
+        }
+    }
+    
+    #[test]
+    fn test_err_struct_float() {
+        let test_ntype = NewTypeStructFloat(3.14);
+        let test_struct = StructFloat {field: 6.022e23};
+        let test_tuple = TupleStructFloat(42, 9.0);
+
+        let szed_ntype = to_bytes(test_ntype);
+        let szed_struct = to_bytes(test_struct);
+        let szed_tuple = to_bytes(test_tuple);
+
+        match szed_ntype {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of floats unsupported. Error info - Type: \"NewTypeStructFloat\".")
+            },
+        }
+        match szed_struct {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of floats unsupported. Error info - Type: \"StructFloat\", Field: \"field\".")
+            },
+        }
+        match szed_tuple {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of floats unsupported. Error info - Type: \"TupleStructFloat\".")
             },
         }
     }
