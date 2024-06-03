@@ -682,4 +682,34 @@ mod tests {
             },
         }
     }
+    
+    #[test]
+    fn test_err_struct_text() {
+        let test_ntype = NewTypeStructText('F');
+        let test_struct = StructText {field: "oopsie"};
+        let test_tuple = TupleStructText(42, "my bad".to_string());
+
+        let szed_ntype = to_bytes(test_ntype);
+        let szed_struct = to_bytes(test_struct);
+        let szed_tuple = to_bytes(test_tuple);
+
+        match szed_ntype {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of text types unsupported. Error info - Type: \"NewTypeStructText\".")
+            },
+        }
+        match szed_struct {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of text types unsupported. Error info - Type: \"StructText\", Field: \"field\".")
+            },
+        }
+        match szed_tuple {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of text types unsupported. Error info - Type: \"TupleStructText\".")
+            },
+        }
+    }
 }
