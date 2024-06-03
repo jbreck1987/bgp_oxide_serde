@@ -464,4 +464,34 @@ mod tests {
             },
         }
     }
+    
+    #[test]
+    fn test_err_enum_float() {
+        let test_ntype = EnumFloatTest::NewTypeVariant(0.0);
+        let test_struct = EnumFloatTest::StructVariant {field: 6.023e23};
+        let test_tuple = EnumFloatTest::TupleVariant(42, 3.14);
+
+        let szed_ntype = to_bytes(test_ntype);
+        let szed_struct = to_bytes(test_struct);
+        let szed_tuple = to_bytes(test_tuple);
+
+        match szed_ntype {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of floats unsupported. Error info - Type: \"EnumFloatTest\", Variant: \"NewTypeVariant\".")
+            },
+        }
+        match szed_struct {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of floats unsupported. Error info - Type: \"EnumFloatTest\", Variant: \"StructVariant\", Field: \"field\".")
+            },
+        }
+        match szed_tuple {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of floats unsupported. Error info - Type: \"EnumFloatTest\", Variant: \"TupleVariant\".")
+            },
+        }
+    }
 }
