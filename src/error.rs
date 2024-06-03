@@ -44,12 +44,12 @@ impl Display for SerializerError {
                 f.write_str("Serialization of maps unsupported.")
             },
             SerializerError::UnsupportedText(Some(msg)) => {
-                f.write_str(&format!("Serialization of text types unsupported. Error info - {}", msg))
+                f.write_str(&format!("Serialization of text types unsupported. Error info - {}.", msg))
             },
             SerializerError::UnsupportedText(None) => {
                 f.write_str("Serialization of text types unsupported.")
             },
-            _ => f.write_str("Undefined metadata")
+            _ => f.write_str("Undefined metadata.")
         }
     }
 }
