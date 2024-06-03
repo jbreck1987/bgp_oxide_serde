@@ -408,7 +408,7 @@ impl<'a> ser::SerializeMap for &'a mut Serializer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::{HashMap};
+    use std::collections::HashMap;
 
     #[test]
     fn test_err_enum_tuple_variant() {
