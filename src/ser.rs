@@ -410,20 +410,58 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
 
+    #[derive(Serialize)]
+    enum EnumHashTest {
+        NewTypeVariant(HashMap<&'static str, u8>),
+        StructVariant{field: HashMap<&'static str, u8>},
+        TupleVariant(u8, HashMap<&'static str, u8>)
+    }   
+    #[derive(Serialize)]
+    enum EnumSignedIntTest {
+        NewTypeVariant(i8),
+        StructVariant{field: i16},
+        TupleVariant(u8, i32)
+    }
+    #[derive(Serialize)]
+    enum EnumFloatTest {
+        NewTypeVariant(f32),
+        StructVariant{field: f64},
+        TupleVariant(u8, f32)
+    }
+    #[derive(Serialize)]
+    enum EnumTextTest {
+        NewTypeVariant(char),
+        StructVariant{field: String},
+        TupleVariant(u8, &'static str)
+    }
+
     #[test]
-    fn test_err_enum_tuple_variant() {
-        #[derive(Serialize)]
-        enum E {
-            TestVariant(HashMap<&'static str, u8>)
-        }
-        let test_enum = E::TestVariant(HashMap::new());
-        let serialized = to_bytes(test_enum);
-        match serialized {
+    fn test_err_enum_hash() {
+        let test_ntype = EnumHashTest::NewTypeVariant(HashMap::new());
+        let test_struct = EnumHashTest::StructVariant {field: HashMap::new()};
+        let test_tuple = EnumHashTest::TupleVariant(42, HashMap::new());
+
+        let szed_ntype = to_bytes(test_ntype);
+        let szed_struct = to_bytes(test_struct);
+        let szed_tuple = to_bytes(test_tuple);
+
+        match szed_ntype {
             Ok(_) => panic!("Expected Err, got Ok"),
             Err(e) => {
-                assert_eq!(e.to_string(), "Serialization of maps unsupported. Error info - Type: \"E\", Variant: \"TestVariant\".")
+                assert_eq!(e.to_string(), "Serialization of maps unsupported. Error info - Type: \"EnumHashTest\", Variant: \"NewTypeVariant\".")
             },
         }
-
+        match szed_struct {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of maps unsupported. Error info - Type: \"EnumHashTest\", Variant: \"StructVariant\", Field: \"field\".")
+            },
+        }
+        match szed_tuple {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of maps unsupported. Error info - Type: \"EnumHashTest\", Variant: \"TupleVariant\".")
+            },
+        }
     }
 }
