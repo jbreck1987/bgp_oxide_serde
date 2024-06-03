@@ -136,11 +136,11 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
     
     fn serialize_char(self, _v: char) -> Result<()> {
-       Err(SerializerError::UnsupportedFloat(self.format_metadata()))
+       Err(SerializerError::UnsupportedText(self.format_metadata()))
     }
     
     fn serialize_str(self, _v: &str) -> Result<()>  {
-        Err(SerializerError::UnsupportedFloat(self.format_metadata()))
+        Err(SerializerError::UnsupportedText(self.format_metadata()))
     }
     
     fn serialize_bytes(self, v: &[u8]) -> Result<()> {
@@ -491,6 +491,35 @@ mod tests {
             Ok(_) => panic!("Expected Err, got Ok"),
             Err(e) => {
                 assert_eq!(e.to_string(), "Serialization of floats unsupported. Error info - Type: \"EnumFloatTest\", Variant: \"TupleVariant\".")
+            },
+        }
+    }
+    #[test]
+    fn test_err_enum_text() {
+        let test_ntype = EnumTextTest::NewTypeVariant('F');
+        let test_struct = EnumTextTest::StructVariant {field: "In the chat".to_string()};
+        let test_tuple = EnumTextTest::TupleVariant(42, "for Harambe");
+
+        let szed_ntype = to_bytes(test_ntype);
+        let szed_struct = to_bytes(test_struct);
+        let szed_tuple = to_bytes(test_tuple);
+
+        match szed_ntype {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of text types unsupported. Error info - Type: \"EnumTextTest\", Variant: \"NewTypeVariant\".")
+            },
+        }
+        match szed_struct {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of text types unsupported. Error info - Type: \"EnumTextTest\", Variant: \"StructVariant\", Field: \"field\".")
+            },
+        }
+        match szed_tuple {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of text types unsupported. Error info - Type: \"EnumTextTest\", Variant: \"TupleVariant\".")
             },
         }
     }
