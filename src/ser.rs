@@ -523,4 +523,33 @@ mod tests {
             },
         }
     }
+    #[test]
+    fn test_err_enum_sint() {
+        let test_ntype = EnumSignedIntTest::NewTypeVariant(42i8);
+        let test_struct = EnumSignedIntTest::StructVariant {field: 13i16};
+        let test_tuple = EnumSignedIntTest::TupleVariant(42, 0i32);
+
+        let szed_ntype = to_bytes(test_ntype);
+        let szed_struct = to_bytes(test_struct);
+        let szed_tuple = to_bytes(test_tuple);
+
+        match szed_ntype {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of signed ints unsupported. Error info - Type: \"EnumSignedIntTest\", Variant: \"NewTypeVariant\".")
+            },
+        }
+        match szed_struct {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of signed ints unsupported. Error info - Type: \"EnumSignedIntTest\", Variant: \"StructVariant\", Field: \"field\".")
+            },
+        }
+        match szed_tuple {
+            Ok(_) => panic!("Expected Err, got Ok"),
+            Err(e) => {
+                assert_eq!(e.to_string(), "Serialization of signed ints unsupported. Error info - Type: \"EnumSignedIntTest\", Variant: \"TupleVariant\".")
+            },
+        }
+    }
 }
